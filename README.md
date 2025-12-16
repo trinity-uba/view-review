@@ -4,8 +4,9 @@ GitHub PR의 리뷰 코멘트를 한눈에 확인하는 웹 애플리케이션�
 
 ## Demo 
 
-![Image](images/chrome-capture-2025-12-17 (1).gif)
-![Image](images/chrome-capture-2025-12-17 (2).gif)
+![Image](assets/images/chrome-capture-2025-12-17 (1).gif)
+
+![Image](assets/images/chrome-capture-2025-12-17 (2).gif)
 
 ## 주요 기능
 
