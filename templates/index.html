@@ -15,11 +15,24 @@
         {% if prs %}
           <span class="comment-count">{{ prs|length }} PR</span>
         {% endif %}
+        {% if pr_type == 'reviewed' %}
+          <span class="pr-type-badge">리뷰한 PR</span>
+        {% else %}
+          <span class="pr-type-badge">작성한 PR</span>
+        {% endif %}
       </div>
     </header>
 
     <div class="filters">
       <form method="get" action="/">
+        <div class="filter-group">
+          <label for="type">PR 타입:</label>
+          <select name="type" id="type">
+            <option value="authored" {% if pr_type == 'authored' %}selected{% endif %}>내가 작성한 PR</option>
+            <option value="reviewed" {% if pr_type == 'reviewed' %}selected{% endif %}>내가 리뷰한 PR</option>
+          </select>
+        </div>
+
         <div class="filter-group">
           <label for="state">PR 상태:</label>
           <select name="state" id="state">
@@ -28,13 +41,6 @@
             <option value="closed" {% if state == 'closed' %}selected{% endif %}>닫힘</option>
             <option value="merged" {% if state == 'merged' %}selected{% endif %}>병합됨</option>
           </select>
-        </div>
-
-        <div class="filter-group">
-          <label>
-            <input type="checkbox" id="include_resolved" value="true">
-            해결된 코멘트 포함
-          </label>
         </div>
 
         <button type="submit" class="filter-button">필터 적용</button>
@@ -64,7 +70,13 @@
       {% else %}
         <div class="no-comments">
           <div class="no-comments-icon">✅</div>
-          <p>PR이 없습니다.</p>
+          <p>
+            {% if pr_type == 'reviewed' %}
+              내가 리뷰 코멘트를 남긴 {{ state }} 상태의 PR이 없습니다.
+            {% else %}
+              내가 작성한 {{ state }} 상태의 PR이 없습니다.
+            {% endif %}
+          </p>
           <p class="hint">필터를 변경해보세요.</p>
         </div>
       {% endif %}

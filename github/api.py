@@ -4,11 +4,9 @@ import json
 import subprocess
 from typing import List, Dict, Any, Optional
 from operator import itemgetter
+from flask import current_app
 
-
-class GitHubAPIError(Exception):
-    """GitHub API 관련 에러"""
-    pass
+from app.exceptions import GitHubAPIError
 
 
 class GitHubAPI:
@@ -65,12 +63,27 @@ class GitHubAPI:
         Returns:
             PR 정보 리스트 (number, title, url, state, createdAt)
         """
-        output = self.run_gh([
+        # 설정에서 PR 목록 제한 가져오기
+        pr_limit = 100
+        try:
+            if current_app:
+                pr_limit = current_app.config.get("MAX_PR_LIST_LIMIT", 100)
+        except RuntimeError:
+            pass
+        
+        # gh CLI는 --limit 옵션으로 제한 가능 (기본값 30)
+        args = [
             "pr", "list",
             "--author", "@me",
             "--state", state,
             "--json", "number,title,url,state,createdAt",
-        ])
+        ]
+        
+        # 제한값이 기본값(30)보다 크면 --limit 옵션 추가
+        if pr_limit > 30:
+            args.extend(["--limit", str(pr_limit)])
+        
+        output = self.run_gh(args)
         if not output:
             return []
         
@@ -90,6 +103,161 @@ class GitHubAPI:
         """
         prs = self.get_my_pr_list(state)
         return [pr["number"] for pr in prs]
+
+    def get_current_user_login(self) -> str:
+        """
+        현재 인증된 사용자의 로그인 이름을 조회한다.
+
+        Returns:
+            사용자 로그인 이름
+        """
+        try:
+            login = self.run_gh(["api", "user", "-q", ".login"])
+            return login
+        except GitHubAPIError:
+            # 대체 방법: auth status에서 사용자 정보 가져오기
+            try:
+                status_output = self.run_gh(["auth", "status", "--json", "user", "-q", ".user.login"])
+                return status_output
+            except:
+                raise GitHubAPIError("사용자 정보를 조회할 수 없습니다. 'gh auth login'을 실행하세요.")
+
+    def get_prs_with_my_review_comments(self, state: str = "open") -> List[Dict[str, Any]]:
+        """
+        내가 리뷰 코멘트를 남긴 PR 목록을 조회한다.
+
+        Args:
+            state: "open", "closed", "merged", "all" (기본값: "open")
+
+        Returns:
+            PR 정보 리스트 (number, title, url, state, createdAt)
+        """
+        repo = self.get_repo_info()
+        owner = repo["owner"]
+        name = repo["name"]
+        
+        # 현재 사용자 로그인 이름 가져오기
+        my_login = self.get_current_user_login()
+        
+        # 모든 OPEN PR 목록 조회
+        if state == "all":
+            pr_state = "all"
+        elif state == "merged":
+            # merged는 별도로 처리 필요
+            pr_state = "all"
+        else:
+            pr_state = state
+        
+        # 설정에서 PR 목록 제한 가져오기
+        pr_limit = 100
+        try:
+            if current_app:
+                pr_limit = current_app.config.get("MAX_PR_LIST_LIMIT", 100)
+        except RuntimeError:
+            pass
+        
+        # gh CLI는 --limit 옵션으로 제한 가능 (기본값 30)
+        args = [
+            "pr", "list",
+            "--state", pr_state,
+            "--json", "number,title,url,state,createdAt,headRefName",
+        ]
+        
+        # 제한값이 기본값(30)보다 크면 --limit 옵션 추가
+        if pr_limit > 30:
+            args.extend(["--limit", str(pr_limit)])
+        
+        output = self.run_gh(args)
+        
+        if not output:
+            return []
+        
+        all_prs = json.loads(output)
+        
+        # merged 상태 필터링 (필요한 경우)
+        if state == "merged":
+            all_prs = [pr for pr in all_prs if pr.get("state") == "MERGED"]
+        elif state == "open":
+            all_prs = [pr for pr in all_prs if pr.get("state") == "OPEN"]
+        elif state == "closed":
+            all_prs = [pr for pr in all_prs if pr.get("state") == "CLOSED"]
+        
+        # 각 PR에 대해 내가 리뷰 코멘트를 남겼는지 확인
+        prs_with_my_comments = []
+        
+        for pr in all_prs:
+            pr_number = pr["number"]
+            
+            # GraphQL로 해당 PR의 리뷰 코멘트 조회
+            # 설정에서 제한값 가져오기 (없으면 기본값 100 사용)
+            max_threads = 100
+            max_comments = 100
+            try:
+                if current_app:
+                    max_threads = current_app.config.get("MAX_REVIEW_THREADS", 100)
+                    max_comments = current_app.config.get("MAX_COMMENTS_PER_THREAD", 100)
+            except RuntimeError:
+                # 애플리케이션 컨텍스트 외부에서는 기본값 사용
+                pass
+            
+            query = f"""
+              query($owner: String!, $name: String!, $number: Int!) {{
+                repository(owner: $owner, name: $name) {{
+                  pullRequest(number: $number) {{
+                    reviewThreads(first: {max_threads}) {{
+                      nodes {{
+                        comments(first: {max_comments}) {{
+                          nodes {{
+                            author {{
+                              login
+                            }}
+                          }}
+                        }}
+                      }}
+                    }}
+                  }}
+                }}
+              }}
+            """
+            
+            try:
+                raw = self.run_gh([
+                    "api", "graphql",
+                    "-f", f"owner={owner}",
+                    "-f", f"name={name}",
+                    "-F", f"number={pr_number}",
+                    "-f", f"query={query}",
+                ])
+                
+                data = json.loads(raw)
+                threads = (
+                    data.get("data", {})
+                    .get("repository", {})
+                    .get("pullRequest", {})
+                    .get("reviewThreads", {})
+                    .get("nodes", [])
+                )
+                
+                # 내가 작성한 코멘트가 있는지 확인
+                has_my_comment = False
+                for thread in threads:
+                    comments = thread.get("comments", {}).get("nodes", [])
+                    for comment in comments:
+                        author_login = comment.get("author", {}).get("login", "")
+                        if author_login == my_login:
+                            has_my_comment = True
+                            break
+                    if has_my_comment:
+                        break
+                
+                if has_my_comment:
+                    prs_with_my_comments.append(pr)
+                    
+            except GitHubAPIError:
+                # 에러가 발생하면 해당 PR은 스킵
+                continue
+        
+        return prs_with_my_comments
 
     def get_comments_for_pr(
         self,
@@ -127,23 +295,36 @@ class GitHubAPI:
             }
         """
 
-        query = r"""
-          query($owner: String!, $name: String!, $number: Int!) {
-            repository(owner: $owner, name: $name) {
-              pullRequest(number: $number) {
+        # 설정에서 제한값 가져오기 (없으면 기본값 100 사용)
+        max_threads = 100
+        max_comments = 100
+        max_commits = 100
+        try:
+            if current_app:
+                max_threads = current_app.config.get("MAX_REVIEW_THREADS", 100)
+                max_comments = current_app.config.get("MAX_COMMENTS_PER_THREAD", 100)
+                max_commits = current_app.config.get("MAX_COMMITS", 100)
+        except RuntimeError:
+            # 애플리케이션 컨텍스트 외부에서는 기본값 사용
+            pass
+        
+        query = f"""
+          query($owner: String!, $name: String!, $number: Int!) {{
+            repository(owner: $owner, name: $name) {{
+              pullRequest(number: $number) {{
                 number
                 title
                 url
                 state
                 createdAt
-                author {
+                author {{
                   login
-                }
-                reviewThreads(first: 100) {
-                  nodes {
+                }}
+                reviewThreads(first: {max_threads}) {{
+                  nodes {{
                     isResolved
-                    comments(first: 100) {
-                      nodes {
+                    comments(first: {max_comments}) {{
+                      nodes {{
                         id
                         databaseId
                         url
@@ -151,36 +332,36 @@ class GitHubAPI:
                         diffHunk
                         bodyHTML
                         createdAt
-                        author {
+                        author {{
                           login
                           url
                           avatarUrl
-                        }
-                      }
-                    }
-                  }
-                }
-                commits(first: 100) {
-                  nodes {
-                    commit {
+                        }}
+                      }}
+                    }}
+                  }}
+                }}
+                commits(first: {max_commits}) {{
+                  nodes {{
+                    commit {{
                       abbreviatedOid
                       messageHeadline
                       committedDate
-                      author {
+                      author {{
                         name
-                        user {
+                        user {{
                           login
                           url
                           avatarUrl
-                        }
-                      }
+                        }}
+                      }}
                       url
-                    }
-                  }
-                }
-              }
-            }
-          }
+                    }}
+                  }}
+                }}
+              }}
+            }}
+          }}
         """
 
         raw = self.run_gh([

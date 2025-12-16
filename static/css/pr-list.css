@@ -1,0 +1,150 @@
+/* PR 목록 및 카드 스타일 */
+
+.pr-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.pr {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.pr-link:hover .pr {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+}
+
+.pr-header {
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s;
+}
+
+.pr-link:hover .pr-header {
+  background: #f6f8fa;
+}
+
+.pr-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.pr-number {
+  color: #666;
+  font-weight: 600;
+  min-width: 60px;
+}
+
+.pr-title-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.pr-toggle {
+  font-size: 0.8rem;
+  color: #666;
+  display: inline-block;
+  width: 16px;
+  transition: transform 0.2s;
+}
+
+.pr-state {
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.pr-state-open {
+  background: #1a7f37;
+  color: white;
+}
+
+.pr-state-closed {
+  background: #d73a49;
+  color: white;
+}
+
+.pr-state-merged {
+  background: #8250df;
+  color: white;
+}
+
+.github-link {
+  text-decoration: none;
+  font-size: 1.1rem;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.github-link:hover {
+  opacity: 1;
+}
+
+.pr-date {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.pr-title a {
+  text-decoration: none;
+  color: #0969da;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.pr-title a:hover {
+  text-decoration: underline;
+}
+
+.pr-title-link {
+  text-decoration: none;
+  color: #0969da;
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.pr-title-link:hover {
+  text-decoration: underline;
+}
+
+.pr-comments {
+  border-top: 1px solid #e5e5e5;
+  padding: 0;
+}
+
+/* PR 타입 배지 */
+.pr-type-badge {
+  display: inline-block;
+  background: #ddf4ff;
+  color: #0969da;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+.comment-count {
+  display: inline-block;
+  background: #ddf4ff;
+  color: #0969da;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
