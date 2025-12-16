@@ -12,6 +12,15 @@ class Config:
     HOST = os.environ.get("FLASK_HOST", "127.0.0.1")
     PORT = int(os.environ.get("FLASK_PORT", "5000"))
     
+    # 데이터베이스 설정
+    # 프로젝트 루트 디렉토리에 database.db 파일 생성
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    SQLALCHEMY_DATABASE_URI = os.environ.get(
+        "DATABASE_URL",
+        f"sqlite:///{os.path.join(basedir, 'database.db')}"
+    )
+    SQLALCHEMY_TRACK_MODIFICATIONS = False  # 성능 최적화를 위해 False
+    
     # GitHub 관련 설정
     DEFAULT_PR_STATE = "open"  # "open", "closed", "merged", "all"
     DEFAULT_INCLUDE_RESOLVED = False  # resolved 코멘트 포함 여부

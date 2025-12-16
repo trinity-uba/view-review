@@ -57,10 +57,20 @@
             {% for c in pr.comments %}
             {% if compact_mode %}
               <!-- 컴팩트 모드 -->
-              <div class="review-card compact {% if c.isResolved %}resolved{% endif %}">
+              <div class="review-card compact {% if c.isResolved %}resolved{% endif %}" 
+                   data-comment-id="{{ c.databaseId }}" 
+                   data-pr-number="{{ pr.number }}">
                 <div class="compact-review">
                   <div class="compact-header">
                     <div class="compact-header-row">
+                      <label class="comment-checkbox-label">
+                        <input type="checkbox" 
+                               class="comment-checkbox" 
+                               data-comment-id="{{ c.databaseId }}" 
+                               data-pr-number="{{ pr.number }}"
+                               aria-label="대응 완료 체크">
+                        <span class="checkbox-text">대응 완료</span>
+                      </label>
                       <span class="compact-author">
                         {% if c.authorUrl %}
                           <a href="{{ c.authorUrl }}" target="_blank" rel="noopener noreferrer">
@@ -98,7 +108,9 @@
               </div>
             {% else %}
               <!-- 상세 모드 -->
-            <div class="review-card {% if c.isResolved %}resolved{% endif %}">
+            <div class="review-card {% if c.isResolved %}resolved{% endif %}" 
+                 data-comment-id="{{ c.databaseId }}" 
+                 data-pr-number="{{ pr.number }}">
               <!-- 카드 헤더 -->
               <div class="card-header">
                 <div class="author-info">
@@ -131,6 +143,15 @@
                     </div>
                   </div>
                 </div>
+                <!-- 대응 완료 체크박스 -->
+                <label class="comment-checkbox-label">
+                  <input type="checkbox" 
+                         class="comment-checkbox" 
+                         data-comment-id="{{ c.databaseId }}" 
+                         data-pr-number="{{ pr.number }}"
+                         aria-label="대응 완료 체크">
+                  <span class="checkbox-text">대응 완료</span>
+                </label>
               </div>
 
               <!-- 파일 정보 -->
@@ -282,6 +303,110 @@
   </div>
 
   <script>
+    /**
+     * 코멘트 체크 상태를 서버에 저장하는 함수 (API 호출)
+     * @param {number} prNumber - PR 번호
+     * @param {string} commentId - 코멘트 ID (databaseId)
+     * @param {boolean} checked - 체크 여부
+     * @returns {Promise<boolean>} 성공 여부
+     */
+    async function saveCommentCheckState(prNumber, commentId, checked) {
+      try {
+        const url = `/api/pr/${prNumber}/comments/${commentId}/check`;
+        
+        if (checked) {
+          // 체크 상태 저장
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ is_checked: true })
+          });
+          
+          const result = await response.json();
+          if (!result.success) {
+            throw new Error(result.error || '체크 상태 저장 실패');
+          }
+          return true;
+        } else {
+          // 체크 해제 (삭제)
+          const response = await fetch(url, {
+            method: 'DELETE'
+          });
+          
+          const result = await response.json();
+          if (!result.success) {
+            throw new Error(result.error || '체크 상태 삭제 실패');
+          }
+          return true;
+        }
+      } catch (error) {
+        console.error('체크 상태 저장 실패:', error);
+        return false;
+      }
+    }
+
+    /**
+     * 코멘트 체크 상태를 서버에서 불러오는 함수 (API 호출)
+     * @param {number} prNumber - PR 번호
+     * @param {string} commentId - 코멘트 ID (databaseId)
+     * @returns {Promise<boolean>} 체크 여부
+     */
+    async function loadCommentCheckState(prNumber, commentId) {
+      try {
+        const url = `/api/pr/${prNumber}/comments/${commentId}/check`;
+        const response = await fetch(url, {
+          method: 'GET'
+        });
+        
+        const result = await response.json();
+        if (result.success && result.data) {
+          return result.data.is_checked === true;
+        }
+        return false;
+      } catch (error) {
+        console.error('체크 상태 조회 실패:', error);
+        return false;
+      }
+    }
+
+    /**
+     * PR의 모든 코멘트 체크 상태를 한 번에 불러오는 함수
+     * @param {number} prNumber - PR 번호
+     * @returns {Promise<Object>} 코멘트 ID를 키로 하는 체크 상태 객체
+     */
+    async function loadAllCommentChecks(prNumber) {
+      try {
+        const url = `/api/pr/${prNumber}/comments/checks`;
+        const response = await fetch(url, {
+          method: 'GET'
+        });
+        
+        const result = await response.json();
+        if (result.success && result.data) {
+          return result.data;
+        }
+        return {};
+      } catch (error) {
+        console.error('체크 상태 일괄 조회 실패:', error);
+        return {};
+      }
+    }
+
+    /**
+     * 체크박스 상태에 따라 코멘트 카드에 스타일 적용
+     * @param {HTMLElement} checkbox - 체크박스 요소
+     */
+    function updateCommentCardStyle(checkbox) {
+      const commentCard = checkbox.closest('.review-card');
+      if (checkbox.checked) {
+        commentCard.classList.add('checked');
+      } else {
+        commentCard.classList.remove('checked');
+      }
+    }
+
     // Diff 포매팅
     document.addEventListener('DOMContentLoaded', function() {
       document.querySelectorAll('.diff code').forEach(function(codeBlock) {
@@ -308,6 +433,47 @@
         
         codeBlock.innerHTML = formatted;
       });
+
+      // 코멘트 체크박스 초기화 및 이벤트 리스너 등록
+      (async function() {
+        // PR 번호 가져오기 (첫 번째 체크박스에서)
+        const firstCheckbox = document.querySelector('.comment-checkbox');
+        if (!firstCheckbox) return;
+        
+        const prNumber = parseInt(firstCheckbox.dataset.prNumber);
+        
+        // 모든 코멘트의 체크 상태를 한 번에 불러오기
+        const allChecks = await loadAllCommentChecks(prNumber);
+        
+        // 각 체크박스에 체크 상태 적용
+        document.querySelectorAll('.comment-checkbox').forEach(function(checkbox) {
+          const commentId = checkbox.dataset.commentId;
+          
+          // 저장된 체크 상태 불러오기
+          const isChecked = allChecks[commentId]?.is_checked === true;
+          checkbox.checked = isChecked;
+          updateCommentCardStyle(checkbox);
+          
+          // 체크박스 변경 이벤트 리스너
+          checkbox.addEventListener('change', async function() {
+            const checked = this.checked;
+            const originalChecked = this.checked;
+            
+            // 즉시 UI 업데이트 (낙관적 업데이트)
+            updateCommentCardStyle(this);
+            
+            // 서버에 저장 시도
+            const success = await saveCommentCheckState(prNumber, commentId, checked);
+            
+            if (!success) {
+              // 실패 시 원래 상태로 복원
+              this.checked = !originalChecked;
+              updateCommentCardStyle(this);
+              alert('체크 상태 저장에 실패했습니다. 다시 시도해주세요.');
+            }
+          });
+        });
+      })();
 
       // 답글 폼 제출 처리
       document.querySelectorAll('.reply-form').forEach(function(form) {
