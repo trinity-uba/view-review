@@ -163,22 +163,7 @@ open http://127.0.0.1:5000
 
 5분마다 자동 새로고침하여 최신 코멘트 상태를 확인할 수 있습니다.
 
-## 9. 팀 공유 서버로 운영
-
-팀원들과 함께 사용하려면:
-
-```bash
-# 외부 접속 허용
-export FLASK_HOST=0.0.0.0
-export FLASK_PORT=5000
-python /path/to/ViewReview/app.py
-```
-
-팀원들은 `http://your-ip:5000`으로 접속할 수 있습니다.
-
-⚠️ **보안 주의**: 외부에 노출할 경우 적절한 인증 및 방화벽 설정이 필요합니다.
-
-## 10. 시스템 시작 시 자동 실행 (macOS)
+## 9. 시스템 시작 시 자동 실행 (macOS)
 
 **LaunchAgent 생성** (`~/Library/LaunchAgents/com.viewreview.plist`):
 ```xml
