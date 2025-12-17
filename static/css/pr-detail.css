@@ -1,0 +1,162 @@
+/* PR 상세 페이지 스타일 */
+
+/* PR 상세 페이지 레이아웃 */
+.pr-detail-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.pr-detail-main {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.pr-detail-sidebar {
+  position: sticky;
+  top: 2rem;
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+}
+
+/* 코멘트 컨테이너 */
+.comments-container {
+  margin-top: 1rem;
+}
+
+.comments-header {
+  padding: 1rem 0;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.comments-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #24292f;
+}
+
+/* 리뷰 카드 */
+.review-card {
+  background: #fff;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition: box-shadow 0.2s;
+}
+
+.review-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.review-card.resolved {
+  opacity: 0.75;
+  border-color: #e5e5e5;
+}
+
+/* 카드 헤더 */
+.card-header {
+  padding: 1rem 1.25rem;
+  background: #f6f8fa;
+  border-bottom: 1px solid #d0d7de;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.author-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #d0d7de;
+  flex-shrink: 0;
+}
+
+.avatar-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.author-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.author-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.author-name a {
+  color: #24292f;
+  text-decoration: none;
+}
+
+.author-name a:hover {
+  color: #0969da;
+  text-decoration: underline;
+}
+
+.comment-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #656d76;
+}
+
+.comment-time {
+  color: #656d76;
+}
+
+.separator {
+  color: #d0d7de;
+}
+
+.github-link-small {
+  color: #0969da;
+  text-decoration: none;
+}
+
+.github-link-small:hover {
+  text-decoration: underline;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .pr-detail-layout {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .pr-detail-sidebar {
+    position: static;
+    max-height: none;
+  }
+}
+

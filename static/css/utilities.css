@@ -1,0 +1,81 @@
+/* 유틸리티 클래스 및 공통 스타일 */
+
+/* 빈 상태 메시지 */
+.no-comments {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #666;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.no-comments-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.no-comments p {
+  margin: 0.5rem 0;
+  font-size: 1rem;
+}
+
+.no-comments .hint {
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.no-comments-inline {
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+}
+
+.no-comments-inline p {
+  margin: 0;
+}
+
+/* 에러 메시지 */
+.error-inline {
+  padding: 2rem;
+  text-align: center;
+  color: #d73a49;
+}
+
+.error-inline button {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: #0969da;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.error-inline button:hover {
+  background: #0860ca;
+}
+
+/* 로딩 애니메이션 */
+.loading {
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+}
+
+.spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #0969da;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+

@@ -1,0 +1,65 @@
+/* 폼 관련 스타일 */
+
+/* 답글 작성 폼 */
+.reply-form-section {
+  padding: 1rem 1.25rem;
+  background: #f6f8fa;
+  border-top: 1px solid #d0d7de;
+}
+
+.reply-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.reply-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+  min-height: 60px;
+  background: #fff;
+}
+
+.reply-input:focus {
+  outline: none;
+  border-color: #0969da;
+  box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.1);
+}
+
+.reply-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.reply-submit-btn {
+  padding: 0.5rem 1.25rem;
+  background: #0969da;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.reply-submit-btn:hover:not(:disabled) {
+  background: #0860ca;
+}
+
+.reply-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.reply-status {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
